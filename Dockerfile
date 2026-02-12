@@ -16,8 +16,9 @@ RUN mkdir /var/run/sshd && \
     echo "PermitRootLogin no" >> /etc/ssh/sshd_config && \
     echo "PasswordAuthentication yes" >> /etc/ssh/sshd_config
 
-# Set password for claude user
-RUN echo "claude:claude2026" | chpasswd
+# Password set via environment variable at runtime
+ENV SSH_PASSWORD=changeme
+RUN echo "#!/bin/bash\necho \"claude:\$SSH_PASSWORD\" | chpasswd && exec /usr/sbin/sshd -D" > /entrypoint.sh && chmod +x /entrypoint.sh
 
 # Claude Code config directory
 RUN mkdir -p /home/claude/.claude && chown -R claude:claude /home/claude
@@ -25,4 +26,4 @@ RUN mkdir -p /home/claude/.claude && chown -R claude:claude /home/claude
 EXPOSE 22
 
 # Start SSH
-CMD ["/usr/sbin/sshd", "-D"]
+CMD ["/bin/bash", "/entrypoint.sh"]
